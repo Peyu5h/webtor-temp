@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.webtor a.banner {
+  display: none;
+}
+
+.webtor .banner {
+  display: none !important;
+}
+
+/* .webtor {
+  display: none;
+} */
+.webtor .text {
+  display: none;
+}
+
+.mejs__button {
+  display: none;
+}
+
+. mejs__logo-button {
+  display: none;
+}
