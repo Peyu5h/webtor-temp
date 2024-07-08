@@ -7,7 +7,9 @@ import { movieData } from "../atom";
 const fetchData = async () => {
   try {
     const response = await fetch(
-      `https://torrent-api-py-pkxb.onrender.com/api/v1/trending?site=1337x&limit=25&page=1`
+      `${
+        import.meta.env.VITE_BASE_URI
+      }/api/v1/trending?site=1337x&limit=25&page=1`
     );
     if (!response.ok) {
       throw new Error("Network response was not ok");
@@ -24,7 +26,9 @@ const fetchData = async () => {
 const fetchSearch = async ({ movie }) => {
   try {
     const response = await fetch(
-      `https://torrent-api-py-pkxb.onrender.com/api/v1/search?site=1337x&query=${movie}&limit=25&page=1`
+      `${
+        import.meta.env.VITE_BASE_URI
+      }/api/v1/search?site=1337x&query=${movie}&limit=25&page=1`
     );
     if (!response.ok) {
       throw new Error("Network response was not ok");
