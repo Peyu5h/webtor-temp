@@ -2,13 +2,18 @@ import { useAtom } from "jotai";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { movieData } from "../atom";
+import Player from "./Player";
 
 const WebtorPlayer = () => {
   const { id } = useParams();
   const [data, setData] = useState({});
   const [magnetUrl, setMagnetUrl] = useState(null);
   const [movie, setMovie] = useAtom(movieData);
-  console.log(movie);
+  const [groupedData, setGroupedData] = useState(null);
+  const [counter, setCounter] = useState(0);
+
+  console.log(id);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -36,74 +41,73 @@ const WebtorPlayer = () => {
   };
 
   useEffect(() => {
-    if (!magnetUrl) {
-      console.warn("No magnet URL available. Skipping Webtor player setup.");
+    if (!movie || !Array.isArray(movie)) {
+      console.log("Movie data not yet loaded or is not an array.");
       return;
     }
 
-    console.log(data?.name);
-
-    window.webtor = window.webtor || [];
-    window.webtor.push({
-      id: "player",
-      magnet: magnetUrl,
-      on: function (e) {
-        if (e.name === window.webtor.TORRENT_FETCHED) {
-          console.log("Torrent fetched!", e.data);
+    const processDataByQuality = (movieData) => {
+      const groupedByQuality = movieData.reduce((acc, item) => {
+        const quality = extractQuality(item.name);
+        if (!acc[quality]) {
+          acc[quality] = [];
         }
-        if (e.name === window.webtor.TORRENT_ERROR) {
-          console.log("Torrent error!");
-        }
-      },
-      poster:
-        data.screenshot[0] ||
-        data.screenshot[2] ||
-        "https://via.placeholder.com/150/0000FF/808080",
-      lang: "en",
-      i18n: {
-        en: {
-          common: {
-            "prepare to play": "Preparing Video Stream... Please Wait...",
-          },
-          stat: {
-            seeding: "Seeding",
-            waiting: "Client initialization",
-            "waiting for peers": "Waiting for peers",
-            from: "from",
-          },
-        },
-      },
-      features: {
-        title: false,
-        settings: false,
-        embed: false,
-        subtitles: false,
-        download: false,
-      },
-    });
-  }, [magnetUrl]);
+        acc[quality].push(item);
+        return acc;
+      }, {});
 
-  console.log(movie);
+      return groupedByQuality;
+    };
+
+    const extractQuality = (name) => {
+      const qualityMatch = name.match(/(360p|480p|720p|1080p|1440p|4K)/i);
+      return qualityMatch ? qualityMatch[0].toUpperCase() : "Unknown";
+    };
+    const processedData = processDataByQuality(movie);
+    setGroupedData(processedData);
+    console.log(processedData);
+  }, [movie]);
+
+  if (!movie || !Array.isArray(movie)) {
+    return (
+      <>
+        <h1>{data.name}</h1>
+        <Player magnetUrl={magnetUrl} data={data} />
+      </>
+    );
+  }
+
+  if (!groupedData) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <>
       <h1>{data.name}</h1>
-      <h2>{data.category}</h2>
-      <p>{data.size}</p>
-      <p>{data.seeders}</p>
-      <p>{data.leechers}</p>
+      <Player magnetUrl={magnetUrl} data={data} />
 
-      <div id="player" className="webtor" />
-      {movie &&
-        movie.length > 1 &&
-        movie.map((item) => (
-          <div key={item.hash}>
-            <h2>{item.name}</h2>
-            <p>{item.size}</p>
-            <p>{item.seeders}</p>
-            <p>{item.leechers}</p>
-          </div>
-        ))}
+      <div className="container mx-auto p-4">
+        <h1 className="text-2xl font-bold mb-4">Movies by Quality</h1>
+        {["360P", "480P", "720P", "1080P", "1440P", "4K", "Unknown"].map(
+          (quality) =>
+            groupedData[quality] && groupedData[quality].length > 0 ? (
+              <div key={quality} className="my-4">
+                <div className="p-4 border rounded-lg shadow-md">
+                  <h2 className="text-xl font-bold mb-2">{quality}</h2>
+                  {groupedData[quality].map((item, index) => (
+                    <div
+                      key={index}
+                      className="cursor-pointer w-48 py-2 px-4 mb-2 bg-teal-500 text-white rounded-md hover:bg-teal-600"
+                      onClick={() => setMagnetUrl(item.magnet)}
+                    >
+                      Server {index + 1} [{item.size}]
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null
+        )}
+      </div>
     </>
   );
 };
